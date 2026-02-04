@@ -12,7 +12,7 @@ import requests
 from docker_manager import DockerManager
 
 # Configuration
-CTFD_URL = os.environ.get('CTFD_URL', 'https://2k26-rsuctf.nulbytez.live')
+CTFD_URL = os.environ.get('CTFD_URL', 'https://2k26-rsuctf.nullbytez.live')
 WEBSHELL_BASE_URL = os.environ.get('WEBSHELL_BASE_URL', 'https://webshell.nullbytez.live')
 CONTAINER_NETWORK = os.environ.get('CONTAINER_NETWORK', 'webshell-network')
 CONTAINER_IMAGE = os.environ.get('CONTAINER_IMAGE', 'webshell-instance:latest')
@@ -50,7 +50,7 @@ def validate_ctfd_token(token):
     """
     try:
         headers = {
-            'Authorization': f'Token {token}',
+            'Authorization': f'token {token}',
             'Content-Type': 'application/json'
         }
         
