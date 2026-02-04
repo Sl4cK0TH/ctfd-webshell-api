@@ -14,6 +14,12 @@ fi
 # Set up home directory
 USER_HOME="/home/$USERNAME"
 
+# Create workspace directory for the user to work in
+mkdir -p "$USER_HOME/workspace"
+
+# Create symlink to challenges for easy access
+ln -sf /challenges "$USER_HOME/challenges"
+
 # Create welcome message
 cat > "$USER_HOME/.motd" << EOF
 ═══════════════════════════════════════════════════════════════
@@ -29,8 +35,11 @@ cat > "$USER_HOME/.motd" << EOF
    • gdb, binutils, ropper
    • vim, nano, tmux
 
-   Challenge Files: /challenges
-   Your files are saved for 24 hours after stopping.
+   Challenge Files: ~/challenges (read-only)
+   Your Workspace:   ~/workspace (work here!)
+   
+   Tip: Copy challenge files to workspace before working:
+        cp -r ~/challenges/PWN/Doors ~/workspace/
    
    Good luck and have fun!
 

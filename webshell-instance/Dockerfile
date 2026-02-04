@@ -73,7 +73,13 @@ ENV LC_ALL=en_US.UTF-8
 # Create challenges directory and copy challenge files
 RUN mkdir -p /challenges
 COPY Challenges-Files/ /challenges/
-RUN chmod -R 755 /challenges
+# Flatten if nested Challenges-Files folder exists, then set permissions
+RUN if [ -d "/challenges/Challenges-Files" ]; then \
+        cp -r /challenges/Challenges-Files/* /challenges/ && \
+        rm -rf /challenges/Challenges-Files; \
+    fi && \
+    chmod -R 755 /challenges && \
+    find /challenges -type f -name "*.zip" -exec chmod 644 {} \;
 
 # Create entrypoint script
 COPY webshell-entrypoint.sh /entrypoint.sh
