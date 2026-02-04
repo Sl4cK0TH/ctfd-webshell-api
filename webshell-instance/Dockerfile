@@ -70,6 +70,11 @@ RUN locale-gen en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
+# Create challenges directory and copy challenge files
+RUN mkdir -p /challenges
+COPY Challenges-Files/ /challenges/
+RUN chmod -R 755 /challenges
+
 # Create entrypoint script
 COPY webshell-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

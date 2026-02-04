@@ -16,23 +16,25 @@ USER_HOME="/home/$USERNAME"
 
 # Create welcome message
 cat > "$USER_HOME/.motd" << EOF
-╔═══════════════════════════════════════════════════════════════╗
-║                                                               ║
-║   🏴 Welcome to RSU CTF 2026 Webshell! 🏴                     ║
-║                                                               ║
-║   Team: $TEAM_NAME                                            ║
-║   User: $USERNAME                                             ║
-║                                                               ║
-║   Available Tools:                                            ║
-║   • Python 3 + pwntools, requests, pycryptodome               ║
-║   • nmap, netcat, socat, tcpdump                              ║
-║   • gdb, binutils, ropper                                     ║
-║   • vim, nano, tmux                                           ║
-║                                                               ║
-║   Your files are saved for 24 hours after stopping.           ║
-║   Good luck and have fun!                                     ║
-║                                                               ║
-╚═══════════════════════════════════════════════════════════════╝
+═══════════════════════════════════════════════════════════════
+
+   🏴 Welcome to RSU CTF 2026 Webshell! 🏴
+
+   Team: $TEAM_NAME
+   User: $USERNAME
+
+   Available Tools:
+   • Python 3 + pwntools, requests, pycryptodome
+   • nmap, netcat, socat, tcpdump
+   • gdb, binutils, ropper
+   • vim, nano, tmux
+
+   Challenge Files: /challenges
+   Your files are saved for 24 hours after stopping.
+   
+   Good luck and have fun!
+
+═══════════════════════════════════════════════════════════════
 
 EOF
 
