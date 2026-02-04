@@ -2,7 +2,7 @@
 # This is the container that gets spawned for each team
 # It runs ttyd with a bash shell and includes common CTF tools
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Prevent interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
