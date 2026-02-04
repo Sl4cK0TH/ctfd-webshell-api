@@ -44,11 +44,9 @@ fi
 # Set proper ownership
 chown -R "$USERNAME:$USERNAME" "$USER_HOME"
 
-# Start ttyd with the user's shell
+# Start ttyd with the user's shell (no authentication - handled by CTFd token)
 exec ttyd \
     --port 7681 \
     --writable \
-    --credential "" \
     --max-clients 3 \
-    --once \
     su - "$USERNAME"
