@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # Webshell API Service
+  webshell-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webshell-api
+    restart: unless-stopped
+    environment:
+      - CTFD_URL=${CTFD_URL:-https://2k26-rsuctf.nulbytez.live}
+      - WEBSHELL_BASE_URL=${WEBSHELL_BASE_URL:-https://webshell.nullbytez.live}
+      - CONTAINER_NETWORK=webshell-network
+      - CONTAINER_IMAGE=webshell-instance:latest
+      - CONTAINER_MEMORY_LIMIT=${CONTAINER_MEMORY_LIMIT:-512m}
+      - CONTAINER_CPU_LIMIT=${CONTAINER_CPU_LIMIT:-0.5}
+      - CONTAINER_TIMEOUT_HOURS=${CONTAINER_TIMEOUT_HOURS:-24}
+      - API_SECRET=${API_SECRET:-change-me-in-production}
+      - PORT=5000
+    volumes:
+      # Mount Docker socket to manage containers
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "5000:5000"
+    networks:
+      - webshell-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.webshell-api.rule=Host(`api.nulbytez.live`)"
+      - "traefik.http.routers.webshell-api.entrypoints=websecure"
+      - "traefik.http.routers.webshell-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.webshell-api.loadbalancer.server.port=5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Traefik Reverse Proxy (handles SSL and routing to webshell containers)
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=webshell-network"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@nulbytez.live}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    networks:
+      - webshell-network
+    labels:
+      - "traefik.enable=true"
+      # Dashboard (optional, remove in production or secure properly)
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.nulbytez.live`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_AUTH:-admin:$$apr1$$xyz$$hashedpassword}"
+
+  # Cleanup service (runs periodically to remove expired containers)
+  cleanup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webshell-cleanup
+    restart: "no"
+    environment:
+      - API_SECRET=${API_SECRET:-change-me-in-production}
+    entrypoint: >
+      sh -c "while true; do
+        sleep 3600;
+        curl -X POST -H 'X-API-Secret: ${API_SECRET}' http://webshell-api:5000/api/admin/cleanup;
+      done"
+    depends_on:
+      - webshell-api
+    networks:
+      - webshell-network
+
+networks:
+  webshell-network:
+    name: webshell-network
+    driver: bridge
+
+volumes:
+  letsencrypt:

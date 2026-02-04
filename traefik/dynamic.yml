@@ -1,0 +1,27 @@
+# Traefik dynamic configuration for webshell routing
+# This file provides dynamic routing to webshell containers
+
+http:
+  routers:
+    # Webshell wildcard router - routes /team-name to container
+    webshell-router:
+      rule: "Host(`webshell.nullbytez.live`) && PathPrefix(`/`)"
+      entryPoints:
+        - websecure
+      service: webshell-service
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - webshell-strip
+
+  middlewares:
+    webshell-strip:
+      stripPrefix:
+        prefixes:
+          - "/"
+
+  services:
+    webshell-service:
+      loadBalancer:
+        servers:
+          - url: "http://webshell-{team}:7681"

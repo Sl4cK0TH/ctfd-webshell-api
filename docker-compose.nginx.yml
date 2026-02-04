@@ -1,0 +1,87 @@
+version: '3.8'
+
+# Alternative docker-compose using Nginx instead of Traefik
+# Use this if you're more familiar with Nginx
+
+services:
+  # Webshell API Service
+  webshell-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webshell-api
+    restart: unless-stopped
+    environment:
+      - CTFD_URL=${CTFD_URL:-https://2k26-rsuctf.nulbytez.live}
+      - WEBSHELL_BASE_URL=${WEBSHELL_BASE_URL:-https://webshell.nullbytez.live}
+      - CONTAINER_NETWORK=webshell-network
+      - CONTAINER_IMAGE=webshell-instance:latest
+      - CONTAINER_MEMORY_LIMIT=${CONTAINER_MEMORY_LIMIT:-512m}
+      - CONTAINER_CPU_LIMIT=${CONTAINER_CPU_LIMIT:-0.5}
+      - CONTAINER_TIMEOUT_HOURS=${CONTAINER_TIMEOUT_HOURS:-24}
+      - API_SECRET=${API_SECRET:-change-me-in-production}
+      - PORT=5000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - webshell-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    networks:
+      - webshell-network
+    depends_on:
+      - webshell-api
+
+  # Certbot for SSL certificates
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+  # Cleanup service
+  cleanup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webshell-cleanup
+    restart: "no"
+    environment:
+      - API_SECRET=${API_SECRET:-change-me-in-production}
+    entrypoint: >
+      sh -c "while true; do
+        sleep 3600;
+        curl -X POST -H 'X-API-Secret: $${API_SECRET}' http://webshell-api:5000/api/admin/cleanup || true;
+      done"
+    depends_on:
+      - webshell-api
+    networks:
+      - webshell-network
+
+networks:
+  webshell-network:
+    name: webshell-network
+    driver: bridge
+
+volumes:
+  letsencrypt:
+  certbot-www:
